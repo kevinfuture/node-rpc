@@ -1,0 +1,9 @@
+{
+  "name": "node-rpc",
+  "version": "0.0.1",
+  "dependencies": {},
+  "devDependencies": {
+    "supervisor": "0.12.0",
+    "tcp-base": "^3.0.0"
+  }
+}
