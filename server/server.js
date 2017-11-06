@@ -1,22 +1,23 @@
 const net = require('net');
 
-// create tcp server
-const server = net.createServer((conection) => {
+const PORT = 80;
+const HOST = '127.0.0.1';
+
+const server = net.createServer((socket) => {
     console.log('============== client connected !!! ============');
-    conection.on('end',() =>{
+    socket.on('data',function (data) {
+        console.log(socket.remoteAddress,socket.remotePort,'服务端接受：',data.toString())
+        socket.write("服务端发送传输给客户端\r\n",'utf8');
+    })
+    socket.on('end',() =>{
         console.log('============ client disconnected !!! ============');
     })
-    conection.write("测试server传输\r\n",'utf8');
-    conection.pipe(conection);
 });
 
-// throwable
 server.on('error', (err) => {
     throw  err;
 })
-// concurrent maxConnections
 server.maxConnections = 100000;
-// listen port
-server.listen(80,'127.0.0.1', ()=>{
-    console.log('========== listening port !!! ===========');
+server.listen(PORT,HOST, ()=>{
+    console.log('========== listening port !!! ===========',HOST,':',PORT);
 })
