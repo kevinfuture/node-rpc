@@ -10,8 +10,7 @@ const defaultOptions = {
     connectTimeout: 3000,
     maxConnections: 3000,
     allowHalfOpen: true,
-    //允许共享连接处理任务
-    // exclusive: false
+    //允许共享连接处理任务  exclusive: false
 };
 class TcpServer{
     /**
@@ -36,73 +35,51 @@ class TcpServer{
         //默认置为null
         this._socket = null;
         this._server = null;
+        this._clientQueue = [];
         //建立连接
         this.createServerConnect();
-
-        //读写操作则暴露给外部
     }
 
-    //回调此处应该如何使用
-    read(n, callback){
-        this._server.on('data',(err, res) =>{
-            console.log('server接受', this._socket.remoteAddress,'_', this._socket.remotePort,' : ',res.toString())
-            callback(err, res);
+    //读写操作则暴露给外部
+    read(callback){
+        //实际上不应该每次都去监听，不过确认的是这样用，每次连接都只创建了一次，不知道这样会不会有问题
+        //应该有问题 to do ，再考虑实现；临时防范，将截获的数据返回给socket，再将socket的数据返回给回调函数
+        this._server.on('connection',(socket) => {
+            return socket.on('data',(data) => {
+                data = '['+ socket.remoteAddress + ':' + socket.remotePort + ']：' + data;
+                return callback(data);
+            });
         });
-    }
-    //回调此处应该如何使用
-    send(data, callback){
+    };
+    send(data){
         this._server.on('connection',(socket) => {
             socket.write(data)
             console.log();
         });
-        return true;
     }
 
     createServerConnect(){
         const server = this._server = net.createServer((socket) => {
-            console.log('client   protocal: ',socket.remoteFamily,'path: ', socket.remoteAddress,':', socket.remotePort);
-
-            // this._socket = socket;
-            // this._socket.setTimeout(3000);
-            // this._socket.on('timeout',()=>{
-            //     console.log('socket timeout');
-            // });
-            // //发送结束报文段fin
-            // this._socket.on('end',() =>{
-            //     console.log('============ client disconnected !!! ============');
-            // })
-
-            // //读取数据
-            // this._socket.on('data',function (data) {
-            //     console.log('server接受', socket.remoteAddress,'_', socket.remotePort,' : ',data.toString())
-            // });
-            // //写入数据
-            // this._socket.write("hi，client！i am server\r\n",'utf8');
-
-            // socket.on('readable  ',()=>{
-            //     //验证是否允许 读操作
-            //     console.log('server可读取！！！');
-            // });
-            // socket.on('writable ',()=>{
-            //     //验证是否允许 写操作
-            //     console.log('server可写入！！！');
-            // });
-            //此为双通道，会回传client传入数据再返回
-            // socket.pipe(socket);
+            this._socket = socket;
+            console.log('client protocal: ',socket.remoteFamily,'; path：', socket.remoteAddress,':', socket.remotePort);
+            socket.on('readable', ()=>{
+                try {
+                    //进行读取的数据校验
+                } catch (err) {
+                    console.error(err);
+                }
+            });
+            socket.on('writeable', ()=>{
+                try {
+                    //进行写入的数据校验
+                } catch (err) {
+                    console.error(err);
+                }
+            });
+            socket.on('end',()=>{
+               console.log('client['+ socket.remoteAddress+':'+socket.remotePort+']：lost connect!!!' );
+            });
         });
-
-
-
-        // //读取数据
-        // this._server.on('data',function (data) {
-        //     console.log('server接受', socket.remoteAddress,'_', socket.remotePort,' : ',data.toString())
-        // });
-        //写入数据 必须监听一个事件
-        // this._server.on('需要监听一个事件，然后拿到socket',(socket) =>{
-        //     socket.write("hi，client！i am server\r\n",'utf8');
-        // });
-
-
 
         this._server.maxConnections = defaultOptions.maxConnections;
         this._server.allowHalfOpen = true;
@@ -117,6 +94,7 @@ class TcpServer{
             console.log('opened server on', server.address());
         });
         this._server.on('error', (err) => {
+            console.log('异常：',err)
             if (err.code === 'EADDRINUSE') {
                 console.log('Address in use, retrying...');
                 setTimeout(() => {
