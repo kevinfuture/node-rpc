@@ -74,7 +74,7 @@ class TcpClient {
             console.log('=========== disconnected !!! ==============');
         });
         client.on('error',(error)=>{
-            throw error;
+            console.log('client连接异常：',error)
         });
     }
 }

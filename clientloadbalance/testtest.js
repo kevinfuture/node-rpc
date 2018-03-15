@@ -1,7 +1,19 @@
 'use strict';
 const LoadBalance = require('./balance');
+const TcpClient = require('../client/tcpClient');
 
-const serverPool = [2,4,6,8];
-const balance = new LoadBalance({serverPool:serverPool});
-const server = balance.getRandomTcpServer();
-console.log(server);
+const serverPool = [
+    new TcpClient({
+        host:'127.0.0.1',
+        port:80
+    }),
+    new TcpClient({
+        host:'127.0.0.1',
+        port:82
+    })
+];
+const balance = new LoadBalance({
+    serverPool: serverPool
+});
+// const server = balance.getRandomTcpServer();
+// console.log(server);

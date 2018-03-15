@@ -12,6 +12,7 @@ class LoadBalance{
 
     /**
      * docker化后，容器一致，基本硬件一致，采用此种方式实现最为简单
+     * 潜在危险是：如果server挂掉一台，则无法抛弃，后续考虑抛弃策略
      * 随机负载方式
      * **/
     getRandomTcpServer() {
