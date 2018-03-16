@@ -1,6 +1,5 @@
 'use strict';
 const net = require('net');
-const client = new net.Socket();
 const EventEmitter = require('events').EventEmitter;
 const util = require('util');
 
@@ -37,18 +36,18 @@ class TcpClient {
         this.allowHalfOpen = this.options.allowHalfOpen;
         this.exclusive = this.options.exclusive;
 
-        //默认置为null
-        this._client = null;
+        //默认：否则当创建多个句柄的实例时候，共享了一个句柄创建过程就会冲突，并失败
+        this._client = new net.Socket();
         //建立连接
         this.createClientConnect();
     }
     read(callback){
-        return client.on('data',(data) => {
+        return this._client.on('data',(data) => {
             return callback(data);
         });
     }
     send(data){
-        client.write(data);
+        this._client.write(data);
     }
 
     createClientConnect(){
@@ -57,23 +56,23 @@ class TcpClient {
             port: this.port,
             host: this.host
         }
-        client.connect(params, ()=>{
-            console.log('server ',client.remoteAddress,':',client.remotePort,'=============== connected to server !!! ================', client.address());
+        this._client.connect(params, ()=>{
+            console.log('server ',this._client.remoteAddress,':',this._client.remotePort,'=============== connected to server !!! ================', this._client.address());
         });
-        client.setNoDelay(true);
-        client.setKeepAlive(true);
-        client.on('readable  ',()=>{
+        this._client.setNoDelay(true);
+        this._client.setKeepAlive(true);
+        this._client.on('readable  ',()=>{
             //读取操作，验证数据有效性，是否符合规则
         });
-        client.on('writable ',()=>{
+        this._client.on('writable ',()=>{
             //写入操作，验证写入数据有效性，是否符合规则
         });
 
         //发送fin报文段断开连接
-        client.on('end',()=>{
+        this._client.on('end',()=>{
             console.log('=========== disconnected !!! ==============');
         });
-        client.on('error',(error)=>{
+        this._client.on('error',(error)=>{
             console.log('client连接异常：',error)
         });
     }
