@@ -2,12 +2,16 @@
 const crypto = require('crypto');
 const EventEmitter = require('events').EventEmitter;
 const util = require('util');
+const HeartBeat = require('../heartbeat/heartbeat');
 
 class LoadBalance{
 
     constructor(options){
         console.assert(options.serverPool, 'it"s no server in loadBalance!!!')
         this.serverPool = options.serverPool;
+
+        //心跳检测与连接重连机制
+        new HeartBeat(options);
     }
 
     /**

@@ -8,14 +8,13 @@ const defaultOptions = {
     noDelay : true,
     connectTimeout: 3000,
     responseTimeout: 3000,
-    heartbeatInterval: 10000,
+    heartbeatInterval: 5000,
     needHeartbeat: true,
     concurrent: 0,
     reConnectTimes: 0,
     reConnectInterval: 1000,
-    maxConnections: 100000,
-    allowHalfOpen: true,
-    logger: console
+    maxConnections: 10000,
+    allowHalfOpen: true
 };
 class TcpClient {
     /**
@@ -33,48 +32,55 @@ class TcpClient {
         this.host = this.options.host;
         this.connectTimeout = this.options.connectTimeout;
         this.maxConnections = this.options.maxConnections;
+
         this.allowHalfOpen = this.options.allowHalfOpen;
         this.exclusive = this.options.exclusive;
+        this.options = null;
 
         //默认：否则当创建多个句柄的实例时候，共享了一个句柄创建过程就会冲突，并失败
         this._client = new net.Socket();
+
         //建立连接
-        this.createClientConnect();
-    }
-    read(callback){
-        return this._client.on('data',(data) => {
-            return callback(data);
-        });
-    }
-    send(data){
-        this._client.write(data);
-    }
-
-    createClientConnect(){
-
         const params = {
             port: this.port,
             host: this.host
         }
-        this._client.connect(params, ()=>{
+        this._client.connect(params, () => {
             console.log('server ',this._client.remoteAddress,':',this._client.remotePort,'=============== connected to server !!! ================', this._client.address());
         });
         this._client.setNoDelay(true);
         this._client.setKeepAlive(true);
-        this._client.on('readable  ',()=>{
+        // this._client.setTimeout(this.connectTimeout);
+        this._client.on('readable  ',() => {
             //读取操作，验证数据有效性，是否符合规则
         });
-        this._client.on('writable ',()=>{
+        this._client.on('writable ',() => {
             //写入操作，验证写入数据有效性，是否符合规则
         });
-
         //发送fin报文段断开连接
-        this._client.on('end',()=>{
+        this._client.on('end',() => {
             console.log('=========== disconnected !!! ==============');
         });
-        this._client.on('error',(error)=>{
-            console.log('client连接异常：',error)
+        this._client.on('error',(error) => {
+            // this._client.destroy();
+            //监听到服务端发生异常时，会直接销毁该socket
+            console.log('socket创建异常：', error);
         });
+    }
+
+    read(callback){
+        //读取超时：要进行重连操作
+        let start = Date.now();
+        return this._client.on('data',(data) => {
+            let end = Date.now();
+            return callback(data);
+        });
+    }
+    send(data){
+        //写入超时：进行重连操作
+        let start = Date.now();
+        this._client.write(data);
+        let end = Date.now();
     }
 }
 util.inherits(TcpClient,EventEmitter);
