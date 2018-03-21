@@ -32,7 +32,7 @@ function getServer( callback ){
 };
 
 function read(callback) {
-    getServer(( server ) => {
+    return getServer(( server ) => {
         return server.read( (data) => {
             return callback(data);
         })
