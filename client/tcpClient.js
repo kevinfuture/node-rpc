@@ -64,7 +64,7 @@ class TcpClient {
         this._client.on('error',(error) => {
             // this._client.destroy();
             //监听到服务端发生异常时，会直接销毁该socket
-            console.log('socket创建异常：', error);
+            console.log(error.address + ':' + error.port,'socket创建异常：', error.errno,' ', error.syscall);
         });
     }
 
@@ -73,12 +73,16 @@ class TcpClient {
         let start = Date.now();
         return this._client.on('data',(data) => {
             let end = Date.now();
+
+            //需要对data进行解码操作；request
             return callback(data);
         });
     }
     send(data){
         //写入超时：进行重连操作
         let start = Date.now();
+
+        //需要对data进行编码操作；response
         this._client.write(data);
         let end = Date.now();
     }

@@ -89,7 +89,7 @@ class TcpServer{
                console.log('client['+ socket.remoteAddress+':'+socket.remotePort+']：lost connect!!!' );
             });
             socket.on('error',(error)=>{
-                console.log('socket异常：',error);
+                console.log('socket异常：',error.errno,' ', error.syscall);
             });
         });
 
